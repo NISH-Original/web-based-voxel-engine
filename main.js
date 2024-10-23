@@ -4,8 +4,12 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 class VoxelWorld {
 	// a cell is a chunk of voxels and a grid of such cells will form
 	// a map. our cell will be 32x32x32.
-	constructor(cellSize) {
-		this.cellSize = cellSize;
+	constructor(options) {
+		this.cellSize = options.cellSize;
+		this.tileSize = options.tileSize;
+		this.tileTextureWidth = options.tileTextureWidth;
+		this.tileTextureHeight = options.tileTextureHeight;
+		const {cellSize} = this;
 		this.cellSliceSize = cellSize * cellSize;
 		this.cell = new Uint8Array(cellSize * cellSize * cellSize);
 	}
@@ -59,10 +63,11 @@ class VoxelWorld {
 	// for (0, 0, 0), we consider voxels (0-31x, 0-31y, 0-31z)
 	// for (1, 0, 0), we consider voxels (32-63x, 0-31y, 0-31z)
 	generateGeometryDataForCell(cellX, cellY, cellZ) {
-		const {cellSize} = this;
+		const {cellSize, tileSize, tileTextureWidth, tileTextureHeight} = this;
 		const positions = [];
 		const normals = [];
 		const indices = [];
+		const uvs = [];
 		const startX = cellX * cellSize;
 		const startY = cellY * cellSize;
 		const startZ = cellZ * cellSize;
@@ -77,7 +82,8 @@ class VoxelWorld {
 					const voxel = this.getVoxel(voxelX, voxelY, voxelZ);
 
 					if (voxel) {
-						for (const {dir, vertices} of VoxelWorld.faces) {
+						const uvVoxel = voxel - 1;
+						for (const {dir, corners, uvRow} of VoxelWorld.faces) {
 							// try getting the neighbor of the voxel
 							const neighbor = this.getVoxel(
 								voxelX + dir[0], // neighbor along x-axis
@@ -89,9 +95,13 @@ class VoxelWorld {
 							if (!neighbor) {
 								const ndx = positions.length / 3;
 
-								for (const pos of vertices) {
+								for (const {pos, uv} of corners) {
 									positions.push(pos[0] + x, pos[1] + y, pos[2] + z);
 									normals.push(...dir);
+									uvs.push(
+										(uvVoxel + uv[0]) * tileSize / tileTextureWidth,
+										1 - (uvRow + 1 - uv[1]) * tileSize / tileTextureHeight
+									);
 								}
 
 								indices.push(ndx, ndx + 1, ndx + 2, ndx + 2, ndx + 1, ndx + 3);
@@ -102,66 +112,75 @@ class VoxelWorld {
 			}
 		}
 
-		return { positions, normals, indices };
+		return { positions, normals, uvs, indices };
 	}
 }
 
-// store all faces of a voxel which includes the coords of the vertices
-// and the direction of the normal
+// store all faces of a voxel which includes:
+// - row of the UVMap
+// - direction of the normal
+// - coords of the vertices of the face
+// - UV coords associated with the vertex
 VoxelWorld.faces = [
-	{ // left
+	{ 	// left
+		uvRow: 0,
 		dir: [ -1,  0,  0, ],
-		vertices: [
-			[ 0, 1, 0 ],
-			[ 0, 0, 0 ],
-			[ 0, 1, 1 ],
-			[ 0, 0, 1 ],
+		corners: [
+			{ pos: [ 0, 1, 0 ], uv: [ 0, 1 ], },
+			{ pos: [ 0, 0, 0 ], uv: [ 0, 0 ], },
+			{ pos: [ 0, 1, 1 ], uv: [ 1, 1 ], },
+			{ pos: [ 0, 0, 1 ], uv: [ 1, 0 ], },
 		],
 	},
-	{ // right
+	{ 	// right
+		uvRow: 0,
 		dir: [  1,  0,  0, ],
-		vertices: [
-			[ 1, 1, 1 ],
-			[ 1, 0, 1 ],
-			[ 1, 1, 0 ],
-			[ 1, 0, 0 ],
-	  	],
+		corners: [
+			{ pos: [ 1, 1, 1 ], uv: [ 0, 1 ], },
+			{ pos: [ 1, 0, 1 ], uv: [ 0, 0 ], },
+			{ pos: [ 1, 1, 0 ], uv: [ 1, 1 ], },
+			{ pos: [ 1, 0, 0 ], uv: [ 1, 0 ], },
+		],
 	},
-	{ // bottom
-	  	dir: [  0, -1,  0, ],
-	  	vertices: [
-			[ 1, 0, 1 ],
-			[ 0, 0, 1 ],
-			[ 1, 0, 0 ],
-			[ 0, 0, 0 ],
-	  	],
+	{ 	// bottom
+		uvRow: 1,
+		dir: [  0, -1,  0, ],
+		corners: [
+			{ pos: [ 1, 0, 1 ], uv: [ 1, 0 ], },
+			{ pos: [ 0, 0, 1 ], uv: [ 0, 0 ], },
+			{ pos: [ 1, 0, 0 ], uv: [ 1, 1 ], },
+			{ pos: [ 0, 0, 0 ], uv: [ 0, 1 ], },
+		],
 	},
-	{ // top
-	  	dir: [  0,  1,  0, ],
-	 	vertices: [
-			[ 0, 1, 1 ],
-			[ 1, 1, 1 ],
-			[ 0, 1, 0 ],
-			[ 1, 1, 0 ],
-	  	],
+	{ 	// top
+		uvRow: 2,
+		dir: [  0,  1,  0, ],
+		corners: [
+			{ pos: [ 0, 1, 1 ], uv: [ 1, 1 ], },
+			{ pos: [ 1, 1, 1 ], uv: [ 0, 1 ], },
+			{ pos: [ 0, 1, 0 ], uv: [ 1, 0 ], },
+			{ pos: [ 1, 1, 0 ], uv: [ 0, 0 ], },
+		],
 	},
-	{ // back
-	  	dir: [  0,  0, -1, ],
-	 	vertices: [
-			[ 1, 0, 0 ],
-			[ 0, 0, 0 ],
-			[ 1, 1, 0 ],
-			[ 0, 1, 0 ],
-	  	],
+	{ 	// back
+		uvRow: 0,
+		dir: [  0,  0, -1, ],
+		corners: [
+			{ pos: [ 1, 0, 0 ], uv: [ 0, 0 ], },
+			{ pos: [ 0, 0, 0 ], uv: [ 1, 0 ], },
+			{ pos: [ 1, 1, 0 ], uv: [ 0, 1 ], },
+			{ pos: [ 0, 1, 0 ], uv: [ 1, 1 ], },
+		],
 	},
-	{ // front
-	 	dir: [  0,  0,  1, ],
-	  	vertices: [
-			[ 0, 0, 1 ],
-			[ 1, 0, 1 ],
-			[ 0, 1, 1 ],
-			[ 1, 1, 1 ],
-	  	],
+	{ 	// front
+		uvRow: 0,
+		dir: [  0,  0,  1, ],
+		corners: [
+			{ pos: [ 0, 0, 1 ], uv: [ 0, 0 ], },
+			{ pos: [ 1, 0, 1 ], uv: [ 1, 0 ], },
+			{ pos: [ 0, 1, 1 ], uv: [ 0, 1 ], },
+			{ pos: [ 1, 1, 1 ], uv: [ 1, 1 ], },
+		],
 	},
 ];
 
@@ -172,7 +191,15 @@ function main() {
 
 	const cellSize = 32;
 
-	const world = new VoxelWorld(cellSize);
+	const tileSize = 16;
+	const tileTextureWidth = 256;
+	const tileTextureHeight = 64;
+	const world = new VoxelWorld({
+		cellSize,
+		tileSize,
+		tileTextureWidth,
+		tileTextureHeight
+	});
 
 	const fov = 75;
 	const aspect = 2; // the canvas default
@@ -197,6 +224,12 @@ function main() {
 		scene.add( light );
 	}
 
+	const loader = new THREE.TextureLoader();
+	const texture = loader.load('pictures/texture_atlas.png', render);
+	texture.magFilter = THREE.NearestFilter;
+	texture.minFilter = THREE.NearestFilter;
+	texture.colorSpace = THREE.SRGBColorSpace;
+
 	// generate heightmap data and store which voxels should exist in cell array. 
 	const cell = new Uint8Array( cellSize * cellSize * cellSize );
 	for ( let y = 0; y < cellSize; ++y) {
@@ -204,22 +237,34 @@ function main() {
 			for ( let x = 0; x < cellSize; ++x) {
 				const height = (Math.sin(x / cellSize * Math.PI * 2) + Math.sin(z / cellSize * Math.PI * 3)) * (cellSize / 6) + (cellSize / 2);
 				if (y < height) {
-					world.setVoxel(x, y, z, 1);
+					world.setVoxel(x, y, z, randInt(1, 17));
 				}
 			}
 		}
 	}
 
-	const {positions, normals, indices} = world.generateGeometryDataForCell(0, 0, 0);
+	// return a random integer between max and min
+	function randInt(min, max) {
+		return Math.floor(Math.random() * (max - min) + min);
+	}
+
+	const {positions, normals, uvs, indices} = world.generateGeometryDataForCell(0, 0, 0);
 	const geometry = new THREE.BufferGeometry();
-	const material = new THREE.MeshLambertMaterial({color:'green'});
+	const material = new THREE.MeshLambertMaterial({
+		map: texture,
+		side: THREE.DoubleSide,
+		alphaTest: 0.1,
+		transparent: true
+	});
 
 	// form the mesh with the positions, normals, and indices information
 	// for the entire cell/chunk
 	const positionNumComponents = 3;
 	const normalNumComponents = 3;
+	const uvNumComponents = 2;
 	geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), positionNumComponents));
 	geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), normalNumComponents));
+	geometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), uvNumComponents));
 	geometry.setIndex(indices);
 	const mesh = new THREE.Mesh(geometry, material);
 	scene.add(mesh);
