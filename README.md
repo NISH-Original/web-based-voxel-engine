@@ -1,6 +1,6 @@
 # Minecraft-Style Voxel Engine
 
-A 3D voxel engine inspired by Minecraft built using JavaScript (Three.js), featuring basic chunk generation, dynamic block addition/removal, and optimization techniques for efficient rendering. This project is a work-in-progress.
+A 3D voxel engine inspired by Minecraft built using JavaScript (Three.js), featuring basic chunk generation, dynamic block addition/removal, and optimization techniques for efficient rendering. This project is a work-in-progress. Access the web version [here](https://nish-original.github.io/voxel-engine/)
 
 ## Features
 - Chunk Generation: Generates and loads a 3D chunk, forming the world.
