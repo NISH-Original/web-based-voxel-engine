@@ -13,7 +13,7 @@ export default class Terrain {
     }
 
     init(centerPosition) {
-        const terrainBoundaries = this.getTerrainBoundariesFromPosition(centerPosition);
+        const terrainBoundaries = this.getTerrainBoundaries(centerPosition);
         this.loadTerrain(terrainBoundaries);
         this.prevCenterChunk = 0; // TODO: call getChunkID() from chunk class
     }
@@ -22,7 +22,7 @@ export default class Terrain {
         const currentChunk = 0; // TODO: getChunkID()
         
         if (this.prevCenterChunk !== currentChunk) {
-            const terrainBoundaries = this.getTerrainBoundariesFromPosition(centerPosition);
+            const terrainBoundaries = this.getTerrainBoundaries(centerPosition);
             this.unloadTerrain(terrainBoundaries);
             this.loadTerrain(terrainBoundaries);
             this.prevCenterChunk = currentChunk;
