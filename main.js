@@ -457,9 +457,10 @@ function main() {
 	const canvas = document.querySelector( '#c' );
 	const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
 	
-	// Enable shadows
+	// Enable shadows with better quality
 	renderer.shadowMap.enabled = true;
 	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	renderer.shadowMap.autoUpdate = true;
 
 	const cellSizeX = 32;
 	const cellSizeY = 64;
@@ -496,15 +497,20 @@ function main() {
 	sun.position.set(100, 200, 100); // Position the sun high and to the side
 	sun.castShadow = true;
 	
-	// Configure shadow properties
-	sun.shadow.mapSize.width = 2048;
-	sun.shadow.mapSize.height = 2048;
+	// Configure shadow properties - optimized for performance
+	sun.shadow.mapSize.width = 1024; // Balanced resolution
+	sun.shadow.mapSize.height = 1024;
 	sun.shadow.camera.near = 0.5;
 	sun.shadow.camera.far = 1000;
 	sun.shadow.camera.left = -200;
 	sun.shadow.camera.right = 200;
 	sun.shadow.camera.top = 200;
 	sun.shadow.camera.bottom = -200;
+	
+	// Optimized shadow bias settings
+	sun.shadow.bias = -0.0005;
+	sun.shadow.normalBias = 0.05;
+	sun.shadow.radius = 8; // Softer edges to hide lower resolution
 	
 	scene.add(sun);
 
