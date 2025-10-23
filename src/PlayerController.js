@@ -456,7 +456,7 @@ export class PlayerController {
 			<div>Player Bottom: ${(this.camera.position.y - this.eyeHeight).toFixed(1)}</div>
 			<div>Fly Up: ${this.keys.flyUp ? 'YES' : 'NO'}</div>
 			<div>Fly Down: ${this.keys.flyDown ? 'YES' : 'NO'}</div>
-			<div>Controls: WASD=Move, Space=Jump/Up, Ctrl=Down, Double-Space=Toggle Fly</div>
+			<div>Controls: WASD=Move, Space=Jump/Up, Ctrl=Down, Double-Space=Toggle Fly, Scroll Wheel=Cycle Blocks</div>
 			<div>Auto-land: ${this.flying && this.keys.flyDown ? 'ACTIVE' : 'INACTIVE'}</div>
 		`;
 	}

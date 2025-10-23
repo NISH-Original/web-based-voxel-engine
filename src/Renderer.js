@@ -46,7 +46,7 @@ export class Renderer {
 		
 		this.scene.add(sun);
 
-		const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+		const ambientLight = new THREE.AmbientLight(0x6e6e6e, 0.9);
 		this.scene.add(ambientLight);
 	}
 
