@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"name": "web-based-voxel-engine",
+			"path": "."
+		}
+	],
+	"settings": {}
+}

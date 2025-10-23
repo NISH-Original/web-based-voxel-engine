@@ -217,12 +217,12 @@ class VoxelWorld {
 	}
 
 	getChunk(cellX, cellY, cellZ) {
-		const id = `${cellX}, ${cellY}, ${cellZ}`;
+		const id = `${cellX},${cellY},${cellZ}`;
 		return this.chunks[id];
 	}
 
 	ensureChunkExists(cellX, cellY, cellZ, scene) {
-		const id = `${cellX}, ${cellY}, ${cellZ}`;
+		const id = `${cellX},${cellY},${cellZ}`;
 		if (!this.chunks[id]) {
 			this.chunks[id] = new Chunk(this, cellX, cellY, cellZ);
 			this.chunks[id].updateGeometry(scene);
@@ -231,7 +231,7 @@ class VoxelWorld {
 		return this.chunks[id];
 	}
 
-	updateVisibleChunks(camera, distance, scene) {
+	updateVisibleChunks(camera, distance, scene, cellIDToMesh) {
 		const camX = Math.floor(camera.position.x / this.cellSizeX);
 		const camZ = Math.floor(camera.position.z / this.cellSizeZ);
 		
@@ -261,6 +261,32 @@ class VoxelWorld {
 				if (chunk) {
 					chunk.dispose(scene);
 					delete this.chunks[id];
+				}
+				
+				// Also clean up the cellIDToMesh for this chunk
+				if (cellIDToMesh) {
+					const [chunkX, chunkY, chunkZ] = id.split(',').map(Number);
+					const cellSizeX = this.cellSizeX;
+					const cellSizeY = this.cellSizeY;
+					const cellSizeZ = this.cellSizeZ;
+					
+					// Clean up all cells in this chunk
+					for (let y = 0; y < cellSizeY; y++) {
+						for (let z = 0; z < cellSizeZ; z++) {
+							for (let x = 0; x < cellSizeX; x++) {
+								const worldX = chunkX * cellSizeX + x;
+								const worldY = chunkY * cellSizeY + y;
+								const worldZ = chunkZ * cellSizeZ + z;
+								const cellID = this.computeCellID(worldX, worldY, worldZ);
+								
+								if (cellIDToMesh[cellID]) {
+									scene.remove(cellIDToMesh[cellID]);
+									cellIDToMesh[cellID].geometry.dispose();
+									delete cellIDToMesh[cellID];
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -430,7 +456,7 @@ function main() {
 	const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
 
 	const cellSizeX = 32;
-	const cellSizeY = 32;
+	const cellSizeY = 64;
 	const cellSizeZ = 32;
 
 	const tileSize = 16;
@@ -545,6 +571,16 @@ function main() {
 			if (!updatedCellIDs[cellID]) {
 				updatedCellIDs[cellID] = true;
 				updateCellGeometry(ox, oy, oz);
+				
+				// Also update chunk geometry if this cell is part of a chunk
+				const cellX = Math.floor(ox / cellSizeX);
+				const cellY = Math.floor(oy / cellSizeY);
+				const cellZ = Math.floor(oz / cellSizeZ);
+				const chunkID = `${cellX},${cellY},${cellZ}`;
+				
+				if (world.chunks[chunkID]) {
+					world.chunks[chunkID].updateGeometry(scene);
+				}
 			}
 		}
 	}
@@ -596,7 +632,7 @@ function main() {
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
-		world.updateVisibleChunks(camera, 2, scene);
+		world.updateVisibleChunks(camera, 2, scene, cellIDToMesh);
 		controls.update();
 		renderer.render(scene, camera);
 
