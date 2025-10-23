@@ -5,11 +5,11 @@ A 3D voxel engine inspired by Minecraft built using JavaScript (Three.js), and s
 ## Features
 - Chunk Generation: Generates and loads a 3D chunk, forming the world.
 - Block Manipulation: Supports adding and deleting blocks in the world.
+- Procedural World Generation: Generates terrain dynamically with the help of Perlin Noise.
 - Rendering Optimization: Implements techniques like backface culling to render large numbers of blocks efficiently.
 - Real-Time Updates: The engine supports dynamic updates to the world as blocks are added or removed.
 
 ## Planned Features
-- Procedural World Generation: Develop algorithms to generate terrain dynamically with the help of Perlin Noise.
 - First-Person Player Controller: Implement a character controller to navigate the world in first-person perspective.
 - Additional Rendering Optimizations: Further improvements to ensure smooth performance as the world grows.
 
