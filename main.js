@@ -63,6 +63,8 @@ class Chunk {
 
 		this.mesh = new THREE.Mesh(geometry, world.material);
 		this.mesh.position.set(cellX * world.cellSizeX, cellY * world.cellSizeY, cellZ * world.cellSizeZ);
+		this.mesh.castShadow = true;
+		this.mesh.receiveShadow = true;
 		scene.add(this.mesh);
 	}
 
@@ -454,6 +456,10 @@ VoxelWorld.faces = [
 function main() {
 	const canvas = document.querySelector( '#c' );
 	const renderer = new THREE.WebGLRenderer({antialias: true, canvas});
+	
+	// Enable shadows
+	renderer.shadowMap.enabled = true;
+	renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
 	const cellSizeX = 32;
 	const cellSizeY = 64;
@@ -485,14 +491,26 @@ function main() {
 	texture.minFilter = THREE.NearestFilter;
 	texture.colorSpace = THREE.SRGBColorSpace;
 
-	// add directional light to scene
-	function addLight( x, y, z ) {
-		const color = 0xFFFFFF;
-		const intensity = 3;
-		const light = new THREE.DirectionalLight( color, intensity );
-		light.position.set( x, y, z );
-		scene.add( light );
-	}
+	// Create sun (directional light) with shadows
+	const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+	sun.position.set(100, 200, 100); // Position the sun high and to the side
+	sun.castShadow = true;
+	
+	// Configure shadow properties
+	sun.shadow.mapSize.width = 2048;
+	sun.shadow.mapSize.height = 2048;
+	sun.shadow.camera.near = 0.5;
+	sun.shadow.camera.far = 1000;
+	sun.shadow.camera.left = -200;
+	sun.shadow.camera.right = 200;
+	sun.shadow.camera.top = 200;
+	sun.shadow.camera.bottom = -200;
+	
+	scene.add(sun);
+
+	// Add ambient light for overall illumination
+	const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+	scene.add(ambientLight);
 
 	const material = new THREE.MeshLambertMaterial({
 		map: texture,
@@ -500,9 +518,6 @@ function main() {
 		alphaTest: 0.1,
 		transparent: true
 	});
-
-	addLight( - 1, 2, 4 );
-	addLight( 1, - 1, - 2 );
 
 	const world = new VoxelWorld({
 		cellSizeX,
@@ -542,6 +557,8 @@ function main() {
 		if (!mesh) {
 			mesh = new THREE.Mesh(geometry, material);
 			mesh.name = cellID;
+			mesh.castShadow = true;
+			mesh.receiveShadow = true;
 			cellIDToMesh[cellID] = mesh;
 			scene.add(mesh);
 			mesh.position.set(cellX * cellSizeX, cellY * cellSizeY, cellZ * cellSizeZ);
@@ -632,7 +649,7 @@ function main() {
 			camera.aspect = canvas.clientWidth / canvas.clientHeight;
 			camera.updateProjectionMatrix();
 		}
-		world.updateVisibleChunks(camera, 2, scene, cellIDToMesh);
+		world.updateVisibleChunks(camera, 10, scene, cellIDToMesh);
 		controls.update();
 		renderer.render(scene, camera);
 
