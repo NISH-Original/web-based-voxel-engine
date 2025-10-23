@@ -11,10 +11,14 @@ html, body {
 
 #ui {
   position: absolute;
-  left: 10px;
-  top: 10px;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
   background: rgba(0, 0, 0, 0.8);
-  padding: 5px;
+  padding: 10px;
+  border-radius: 8px;
+  display: flex;
+  gap: 5px;
 }
 
 #ui input[type=radio] {
@@ -34,6 +38,49 @@ display: inline-block;
 
 #ui input[type=radio]:checked + label {
 outline: 3px solid red;
+}
+
+#crosshair {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+#crosshair::before,
+#crosshair::after {
+  content: '';
+  position: absolute;
+  background-color: white;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.8);
+}
+
+#crosshair::before {
+  width: 2px;
+  height: 20px;
+  left: 9px;
+  top: 0;
+}
+
+#crosshair::after {
+  width: 20px;
+  height: 2px;
+  left: 0;
+  top: 9px;
+}
+
+#crosshair.targeting {
+  opacity: 0.7;
+}
+
+#crosshair.targeting::before,
+#crosshair.targeting::after {
+  background-color: #ffffff;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
 @media (max-width: 600px), (max-height: 600px) {
