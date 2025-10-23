@@ -24,8 +24,24 @@ class Chunk {
 				const worldX = startX + x;
 				const worldZ = startZ + z;
 				const height = Math.floor(this.fractalNoise(worldX, worldZ, this.world.noise) * 30 + 10);
-				for (let y = 0; y < height; y++) {
-					this.world.setVoxel(worldX, y, worldZ, 14);
+				
+				// Ensure minimum height to prevent holes
+				const minHeight = Math.max(height, 5);
+				
+				// Generate solid terrain from bottom to surface
+				for (let y = 0; y < minHeight; y++) {
+					let blockType = 14; // Default grass block
+					
+					// Different block types based on height
+					if (y < minHeight - 3) {
+						blockType = 1; // Stone/dirt for deep layers
+					} else if (y < minHeight - 1) {
+						blockType = 2; // Dirt layer
+					} else {
+						blockType = 14; // Grass on top
+					}
+					
+					this.world.setVoxel(worldX, y, worldZ, blockType);
 				}
 			}
 		}
